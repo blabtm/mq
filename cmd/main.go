@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -21,8 +22,10 @@ func main() {
 	tcpAddr := flag.String("tcp", ":1883", "network address for TCP listener")
 	wsAddr := flag.String("ws", ":1882", "network address for Websocket listener")
 	infoAddr := flag.String("info", ":8080", "network address for web info dashboard listener")
+	vcasAddr := flag.String("vcas", ":20041", "network address for VCAS listener")
 	tlsCertFile := flag.String("tls-cert-file", "", "TLS certificate file")
 	tlsKeyFile := flag.String("tls-key-file", "", "TLS key file")
+	debug := flag.Bool("d", false, "enable debug logging level")
 	flag.Parse()
 
 	sigs := make(chan os.Signal, 1)
@@ -45,7 +48,18 @@ func main() {
 		}
 	}
 
-	server := mqtt.New(nil)
+	lvl := slog.LevelInfo
+
+	if *debug {
+		lvl = slog.LevelDebug
+	}
+
+	server := mqtt.New(&mqtt.Options{
+		InlineClient: true,
+		Logger: slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			Level: lvl,
+		})),
+	})
 	_ = server.AddHook(new(auth.AllowHook), nil)
 
 	tcp := listeners.NewTCP(listeners.Config{
@@ -75,6 +89,16 @@ func main() {
 		server.Info,
 	)
 	err = server.AddListener(stats)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	vcas := listeners.NewTCP(listeners.Config{
+		ID:        "vcas",
+		Address:   *vcasAddr,
+		TLSConfig: tlsConfig,
+	})
+	err = server.AddListener(vcas)
 	if err != nil {
 		log.Fatal(err)
 	}
