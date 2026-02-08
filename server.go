@@ -397,6 +397,10 @@ func (s *Server) eventLoop() {
 
 // EstablishConnection establishes a new client when a listener accepts a new connection.
 func (s *Server) EstablishConnection(listener string, c net.Conn) error {
+	if listener == "vcas" {
+		return s.vAttachClient(c)
+	}
+
 	cl := s.NewClient(c, listener, "", false)
 	return s.attachClient(cl, listener)
 }

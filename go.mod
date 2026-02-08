@@ -1,6 +1,6 @@
 module github.com/mochi-mqtt/server/v2
 
-go 1.21
+go 1.24
 
 require (
 	github.com/alicebob/miniredis/v2 v2.23.0
@@ -11,6 +11,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/rs/xid v1.4.0
 	github.com/stretchr/testify v1.8.1
+	github.com/tinylib/msgp v1.6.3
 	go.etcd.io/bbolt v1.3.5
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -39,6 +40,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
+	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.12.0 // indirect
