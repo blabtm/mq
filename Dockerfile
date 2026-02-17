@@ -1,22 +1,19 @@
-FROM golang:1.21.0-alpine3.18 AS builder
-
-RUN apk update
-RUN apk add git
+FROM golang:1.24 AS build
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
+COPY go.mod .
+COPY go.sum .
 RUN go mod download
 
-COPY . ./
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /mq ./cmd/docker
 
-RUN go build -o /app/mochi ./cmd/docker
-
-FROM alpine
+FROM debian:buster-slim
 
 WORKDIR /
-COPY --from=builder /app/mochi .
+COPY --from=build /mq /mq
 
-ENTRYPOINT [ "/mochi" ]
-CMD ["/cmd/docker", "--config", "config.yaml"]
+EXPOSE 1883
+EXPOSE 20041
+ENTRYPOINT [ "/mq" ]

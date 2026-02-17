@@ -5,13 +5,13 @@
 package main
 
 import (
-	"flag"
-	"github.com/mochi-mqtt/server/v2/config"
 	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/mochi-mqtt/server/v2/config"
 
 	mqtt "github.com/mochi-mqtt/server/v2"
 )
@@ -19,8 +19,10 @@ import (
 func main() {
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil))) // set basic logger to ensure logs before configuration are in a consistent format
 
-	configFile := flag.String("config", "config.yaml", "path to mochi config yaml or json file")
-	flag.Parse()
+	conf, ok := os.LookupEnv("CONFIG_PATH")
+	if !ok {
+		conf = "/etc/config.yaml"
+	}
 
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
@@ -30,7 +32,7 @@ func main() {
 		done <- true
 	}()
 
-	configBytes, err := os.ReadFile(*configFile)
+	configBytes, err := os.ReadFile(conf)
 	if err != nil {
 		log.Fatal(err)
 	}
