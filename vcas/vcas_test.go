@@ -19,7 +19,7 @@ func TestMarshal(t *testing.T) {
 	}{
 		`with float`: {
 			inp: Packet{
-				Method: PUB,
+				Method: SET,
 				Topic:  "test",
 				Time:   time.UnixMilli(1118505599999),
 				Value:  11.06,
@@ -34,7 +34,7 @@ func TestMarshal(t *testing.T) {
 		},
 		`with string`: {
 			inp: Packet{
-				Method: PUB,
+				Method: SET,
 				Topic:  "test",
 				Time:   time.UnixMilli(1118505599999),
 				Value:  "hello",
@@ -49,7 +49,7 @@ func TestMarshal(t *testing.T) {
 		},
 		`without value`: {
 			inp: Packet{
-				Method: PUB,
+				Method: SET,
 				Topic:  "test",
 				Time:   time.UnixMilli(1118505599999),
 			},
@@ -63,7 +63,7 @@ func TestMarshal(t *testing.T) {
 		},
 		`without name`: {
 			inp: Packet{
-				Method: PUB,
+				Method: SET,
 				Time:   time.UnixMilli(1118505599999),
 			},
 			exp: struct {
@@ -78,7 +78,7 @@ func TestMarshal(t *testing.T) {
 	for name, data := range cases {
 		t.Run(name, func(t *testing.T) {
 			res := make([]byte, 0)
-			res, err := Marshal(&data.inp, res)
+			res, err := Marshal(&data.inp, res, nil)
 
 			if !data.exp.err {
 				assert.Nil(t, err)
@@ -96,14 +96,14 @@ func BenchmarkMarshal(b *testing.B) {
 
 		pay := make([]byte, 0)
 		pkt := Packet{
-			Method: PUB,
+			Method: SET,
 			Topic:  "VEPP/CCD/1M1L/sigma_x",
 			Time:   time.UnixMilli(1118505599999),
 			Value:  rand.Float64(),
 		}
 
 		b.StartTimer()
-		Marshal(&pkt, pay)
+		Marshal(&pkt, pay, nil)
 	}
 }
 
@@ -123,7 +123,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  11.06,
@@ -138,7 +138,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  11.06,
@@ -198,7 +198,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: USB,
+					Method: UNSUB,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  nil,
@@ -213,7 +213,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: USB,
+					Method: UNSUB,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  nil,
@@ -288,7 +288,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  11.06,
@@ -303,7 +303,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  11.06,
@@ -318,7 +318,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  11.06,
@@ -333,7 +333,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  11.06,
@@ -348,7 +348,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  11.06,
@@ -363,7 +363,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  11.06,
@@ -378,7 +378,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  11.06,
@@ -393,7 +393,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  "11.06\t\t ",
@@ -408,7 +408,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  11.06,
@@ -423,7 +423,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  11.06,
@@ -438,7 +438,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  nil,
@@ -453,7 +453,7 @@ func TestUnmarshal(t *testing.T) {
 			}{
 				err: false,
 				res: Packet{
-					Method: PUB,
+					Method: SET,
 					Topic:  "test",
 					Time:   time.UnixMilli(1118505599999),
 					Value:  nil,
@@ -501,7 +501,7 @@ func TestUnmarshal(t *testing.T) {
 	for name, data := range cases {
 		t.Run(name, func(t *testing.T) {
 			pkt := Packet{}
-			err := Unmarshal(&pkt, []byte(data.inp))
+			err := Unmarshal(&pkt, []byte(data.inp), nil)
 
 			if !data.exp.err {
 				assert.Nil(t, err)
@@ -524,6 +524,6 @@ func BenchmarkUnmarshal(b *testing.B) {
 		)
 
 		b.StartTimer()
-		Unmarshal(&pkt, pay)
+		Unmarshal(&pkt, pay, nil)
 	}
 }

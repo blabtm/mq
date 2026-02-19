@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2022 mochi-mqtt, mochi-co
-// SPDX-FileContributor: mochi-co
+// SPDX-FileCopyrightText: 2023 mochi-mqtt
+// SPDX-FileContributor: dgduncan, mochi-co
 
 package main
 
 import (
-	"crypto/tls"
 	"flag"
 	"log"
 	"log/slog"
@@ -13,99 +12,48 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/mochi-mqtt/server/v2/config"
+
 	mqtt "github.com/mochi-mqtt/server/v2"
-	"github.com/mochi-mqtt/server/v2/hooks/auth"
-	"github.com/mochi-mqtt/server/v2/listeners"
 )
 
 func main() {
-	tcpAddr := flag.String("tcp", ":1883", "network address for TCP listener")
-	wsAddr := flag.String("ws", ":1882", "network address for Websocket listener")
-	infoAddr := flag.String("info", ":8080", "network address for web info dashboard listener")
-	vcasAddr := flag.String("vcas", ":20041", "network address for VCAS listener")
-	tlsCertFile := flag.String("tls-cert-file", "", "TLS certificate file")
-	tlsKeyFile := flag.String("tls-key-file", "", "TLS key file")
-	debug := flag.Bool("d", false, "enable debug logging level")
-	flag.Parse()
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil))) // set basic logger to ensure logs before configuration are in a consistent format
 
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
 		<-sigs
 		done <- true
 	}()
 
-	var tlsConfig *tls.Config
+	addr := flag.String("conf", "/etc/v2k/platform/mq/config.yaml", "configuration file")
+	flag.Parse()
 
-	if tlsCertFile != nil && tlsKeyFile != nil && *tlsCertFile != "" && *tlsKeyFile != "" {
-		cert, err := tls.LoadX509KeyPair(*tlsCertFile, *tlsKeyFile)
-		if err != nil {
-			return
-		}
-		tlsConfig = &tls.Config{
-			Certificates: []tls.Certificate{cert},
-		}
+	conf, ok := os.LookupEnv("CONFIG_PATH")
+
+	if !ok {
+		conf = *addr
 	}
 
-	lvl := slog.LevelInfo
+	configBytes, err := os.ReadFile(conf)
 
-	if *debug {
-		lvl = slog.LevelDebug
-	}
-
-	server := mqtt.New(&mqtt.Options{
-		InlineClient: true,
-		Logger: slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-			Level: lvl,
-		})),
-	})
-	_ = server.AddHook(new(auth.AllowHook), nil)
-
-	tcp := listeners.NewTCP(listeners.Config{
-		ID:        "t1",
-		Address:   *tcpAddr,
-		TLSConfig: tlsConfig,
-	})
-	err := server.AddListener(tcp)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ws := listeners.NewWebsocket(listeners.Config{
-		ID:      "ws1",
-		Address: *wsAddr,
-	})
-	err = server.AddListener(ws)
+	options, err := config.FromBytes(configBytes)
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	stats := listeners.NewHTTPStats(
-		listeners.Config{
-			ID:      "info",
-			Address: *infoAddr,
-		},
-		server.Info,
-	)
-	err = server.AddListener(stats)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	vcas := listeners.NewTCP(listeners.Config{
-		ID:        "vcas",
-		Address:   *vcasAddr,
-		TLSConfig: tlsConfig,
-	})
-	err = server.AddListener(vcas)
-	if err != nil {
-		log.Fatal(err)
-	}
+	server := mqtt.New(options)
 
 	go func() {
-		err := server.Serve()
-		if err != nil {
+		if err := server.Serve(); err != nil {
 			log.Fatal(err)
 		}
 	}()
