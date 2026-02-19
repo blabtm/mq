@@ -129,6 +129,12 @@ type Options struct {
 	// Enable Inline client to allow direct subscribing and publishing from the parent codebase,
 	// with negligible performance difference (disabled by default to prevent confusion in statistics).
 	InlineClient bool `yaml:"inline_client" json:"inline_client"`
+
+	// Enable VCAS broker extension.
+	Vcas bool `yaml:"vcas" json:"vcas"`
+
+	// DatabaseAddr specifies an internal database URI.
+	DatabaseAddr string `yaml:"db_addr" json:"db_addr"`
 }
 
 // Server is an MQTT broker server. It should be created with server.New()
@@ -144,6 +150,7 @@ type Server struct {
 	Log          *slog.Logger         // minimal no-alloc logger
 	hooks        *Hooks               // hooks contains hooks for extra functionality such as auth and persistent storage
 	inlineClient *Client              // inlineClient is a special client used for inline subscriptions and inline Publish
+	vServer      *vServer
 }
 
 // loop contains interval tickers for the system events loop.
@@ -200,6 +207,10 @@ func New(opts *Options) *Server {
 	if s.Options.InlineClient {
 		s.inlineClient = s.NewClient(nil, LocalListener, InlineClientId, true)
 		s.Clients.Add(s.inlineClient)
+	}
+
+	if s.Options.Vcas {
+		s.vServer = vNew(s)
 	}
 
 	return s
@@ -363,6 +374,12 @@ func (s *Server) Serve() error {
 		}
 	}
 
+	if s.vServer != nil {
+		if err := s.vServer.vFetch(); err != nil {
+			s.Log.Error(err.Error())
+		}
+	}
+
 	go s.eventLoop()                            // spin up event loop for issuing $SYS values and closing server.
 	s.Listeners.ServeAll(s.EstablishConnection) // start listening on all listeners.
 	s.publishSysTopics()                        // begin publishing $SYS system values.
@@ -398,7 +415,7 @@ func (s *Server) eventLoop() {
 // EstablishConnection establishes a new client when a listener accepts a new connection.
 func (s *Server) EstablishConnection(listener string, c net.Conn) error {
 	if listener == "vcas" {
-		return s.vAttachClient(c)
+		return s.vServer.vAttach(c)
 	}
 
 	cl := s.NewClient(c, listener, "", false)
