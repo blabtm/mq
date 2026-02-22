@@ -171,5 +171,9 @@ func FromBytes(b []byte) (*mqtt.Options, error) {
 	o.Listeners = c.Listeners
 	o.Logger = c.LoggingConfig.ToLogger()
 
+	if o.Vcas {
+		o.InlineClient = true
+	}
+
 	return &o, nil
 }

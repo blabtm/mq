@@ -29,10 +29,10 @@ func main() {
 		done <- true
 	}()
 
-	addr := flag.String("conf", "/etc/v2k/platform/mq/config.yaml", "configuration file")
+	addr := flag.String("conf", "/etc/mq/config.yaml", "configuration file")
 	flag.Parse()
 
-	conf, ok := os.LookupEnv("CONFIG_PATH")
+	conf, ok := os.LookupEnv("MQ_CONFIG_PATH")
 
 	if !ok {
 		conf = *addr
